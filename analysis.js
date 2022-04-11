@@ -1,4 +1,3 @@
-const { count } = require("console");
 var esprima = require("esprima");
 var options = {tokens:true, tolerant: true, loc: true, range: true };
 var fs = require("fs");
@@ -126,11 +125,11 @@ function complexity(filePath)
 			builder.ParameterCount = paramCount; //Simple Calculation A
 
 			var decisionCount = 0;	//number of if statements/loops
-			var maxC = 1;			//Max number of conditions
+			var maxC = 0;			//Max number of conditions
 
 			traverseWithParents(node, function(node){
 				if(isDecision(node)){
-					var currMax = 0;
+					var currMax = 1;
 					decisionCount+=1;
 
 					traverseWithParents(node, function(node){
@@ -293,8 +292,7 @@ function Crazy (argument)
 				  }
 				  return;
           }
-          return hours.toString().split(".")[0] + " " + szhr + " " +
-mints.toString().split(".")[0] + " " + szmin;
+          return hours.toString().split(".")[0] + " " + szhr + " " + mints.toString().split(".")[0] + " " + szmin;
       }
   }
  exports.complexity = complexity;
