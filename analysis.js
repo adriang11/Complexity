@@ -1,3 +1,4 @@
+const { count } = require("console");
 var esprima = require("esprima");
 var options = {tokens:true, tolerant: true, loc: true, range: true };
 var fs = require("fs");
@@ -6,9 +7,7 @@ function main()
 {
 	var args = process.argv.slice(2);
 
-	if( args.length == 0 )
-	{
-		args = ["analysis.js"];
+	if( args.length == 0 ){ args = ["analysis.js"]; 
 	}
 	var filePath = args[0];
 	
@@ -52,9 +51,7 @@ function FunctionBuilder()
 				"MaxConditions: {4}\t" +
 				"Parameters: {5}\n\n"
 			)
-			.format(this.FunctionName, this.StartLine,
-				     this.SimpleCyclomaticComplexity, this.MaxNestingDepth,
-			        this.MaxConditions, this.ParameterCount)
+			.format(this.FunctionName, this.StartLine, this.SimpleCyclomaticComplexity, this.MaxNestingDepth, this.MaxConditions, this.ParameterCount)
 		);
 	}
 };
@@ -93,7 +90,7 @@ function traverseWithParents(object, visitor)
             if (typeof child === 'object' && child !== null && key != 'parent') 
             {
             	child.parent = object;
-					traverseWithParents(child, visitor);
+				traverseWithParents(child, visitor);
             }
         }
     }
@@ -104,7 +101,7 @@ function complexity(filePath)
 	var buf = fs.readFileSync(filePath, "utf8");
 	var ast = esprima.parse(buf, options);
 
-	var i = 0;
+	var strCount = 0;
 
 	// A file level-builder:
 	var fileBuilder = new FileBuilder();
@@ -123,10 +120,39 @@ function complexity(filePath)
 			builder.StartLine    = node.loc.start.line;
 
 			builders[builder.FunctionName] = builder;
+			
+			var paramCount = node.params.length;
+			
+			builder.ParameterCount = paramCount; //Simple Calculation A
+
+			var decisionCount = 0;	//number of if statements/loops
+			var maxC = 1;			//Max number of conditions
+
+			traverseWithParents(node, function(node){
+				if(isDecision(node)){
+					var currMax = 0;
+					decisionCount+=1;
+
+					traverseWithParents(node, function(node){
+						if(node.type==='LogicalExpression' && node.operator==='&&' || node.operator==='||'){
+								currMax+=1;
+						}
+					})
+					if(currMax>maxC){
+						maxC = currMax;
+					}
+				}
+			})
+			//console.log(typeof value);
+			builder.SimpleCyclomaticComplexity = (decisionCount+1);	//Multiple Visitors A
+			builder.MaxConditions = maxC;	//Multiple Visitors B
 		}
-
+		if(node.type === "Literal"){
+			strCount+=1;
+		}
 	});
-
+	fileBuilder.Strings = strCount; //Simple Calculation B
+	
 }
 
 // Helper function for counting children of node.
@@ -153,7 +179,7 @@ function childrenLength(node)
 function isDecision(node)
 {
 	if( node.type == 'IfStatement' || node.type == 'ForStatement' || node.type == 'WhileStatement' ||
-		 node.type == 'ForInStatement' || node.type == 'DoWhileStatement')
+		node.type == 'ForInStatement' || node.type == 'DoWhileStatement')
 	{
 		return true;
 	}
@@ -202,8 +228,7 @@ function Crazy (argument)
       else if ( secs > 59 && secs < 3600 )
       {
           var mints = secs / 60;
-          var remainder = parseInt(secs.toString().split(".")[0]) -
-(parseInt(mints.toString().split(".")[0]) * 60);
+          var remainder = parseInt(secs.toString().split(".")[0]) - (parseInt(mints.toString().split(".")[0]) * 60);
           var szmin;
           if ( mints > 1 )
           {
@@ -213,17 +238,14 @@ function Crazy (argument)
           {
               szmin = "minute";
           }
-          return mints.toString().split(".")[0] + " " + szmin + " " +
-remainder.toString() + " seconds";
+          return mints.toString().split(".")[0] + " " + szmin + " " + remainder.toString() + " seconds";
       }
       else
       {
           var mints = secs / 60;
           var hours = mints / 60;
-          var remainders = parseInt(secs.toString().split(".")[0]) -
-(parseInt(mints.toString().split(".")[0]) * 60);
-          var remainderm = parseInt(mints.toString().split(".")[0]) -
-(parseInt(hours.toString().split(".")[0]) * 60);
+          var remainders = parseInt(secs.toString().split(".")[0]) - (parseInt(mints.toString().split(".")[0]) * 60);
+          var remainderm = parseInt(mints.toString().split(".")[0]) - (parseInt(hours.toString().split(".")[0]) * 60);
           var szmin;
           if ( remainderm > 1 )
           {
